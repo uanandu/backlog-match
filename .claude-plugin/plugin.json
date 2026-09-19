@@ -1,0 +1,7 @@
+{
+  "name": "backlog-match",
+  "description": "Match casual references to a project's BACKLOG.md items and hand off to OpenSpec's /opsx:propose command.",
+  "version": "1.0.0",
+  "author": { "name": "Ananda Narayanan Udayakumar" },
+  "license": "MIT"
+}
