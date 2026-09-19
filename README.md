@@ -38,22 +38,3 @@ Via marketplace (recommended):
 Or manually: copy this repo into the consuming project's
 `.claude/plugins/backlog-match/` directory.
 
-## Local testing
-
-To try changes without publishing, point Claude Code at this repo directly
-from inside a project that has a `BACKLOG.md`:
-
-```
-claude --plugin-dir /path/to/backlog-match
-```
-
-Then just talk to it naturally (e.g. "let's do the meal tracking one") —
-the skill triggers on casual phrasing, not just explicit commands.
-
-Or exercise the real install path with a local marketplace:
-
-```
-/plugin marketplace add /path/to/backlog-match
-/plugin install backlog-match@uanandu-backlog-match
-/plugin list
-```
