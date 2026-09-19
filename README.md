@@ -22,6 +22,12 @@ any other format.
 
 ## Install
 
-Copy `plugins/backlog-match/` into the consuming project's
-`.claude/plugins/` directory (or install it via a marketplace, if you set
-one up — not covered here).
+Via marketplace (recommended):
+
+```
+/plugin marketplace add uanandu/backlog-match
+/plugin install backlog-match@uanandu-backlog-match
+```
+
+Or manually: copy this repo into the consuming project's
+`.claude/plugins/backlog-match/` directory.

@@ -1,0 +1,21 @@
+{
+  "name": "uanandu-backlog-match",
+  "owner": {
+    "name": "Ananda Narayanan Udayakumar",
+    "email": "anandu_dev@icloud.com",
+    "url": "https://github.com/uanandu/backlog-match"
+  },
+  "plugins": [
+    {
+      "name": "backlog-match",
+      "source": "./",
+      "description": "Match casual references to a project's BACKLOG.md items and hand off to OpenSpec's /opsx:propose command.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ananda Narayanan Udayakumar"
+      },
+      "license": "MIT",
+      "homepage": "https://github.com/uanandu/backlog-match"
+    }
+  ]
+}
