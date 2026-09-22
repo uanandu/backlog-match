@@ -1,67 +1,27 @@
 ---
 name: backlog-match
 description: >-
-  Use this when the user wants to find, start, or propose work on a
-  BACKLOG.md item by name or informal description — phrases like "let's
-  start on sessions," "is there a backlog item for the exercise library
-  thing," or "let's do the meal tracking one." Matches the keyword against
-  BACKLOG.md rows and hands off to /opsx:propose. Trigger on casual,
-  conversational references to backlog work, not just explicit mentions
-  of "backlog" or "BACKLOG.md."
-allowed-tools: [Read, Write]
+  Use this when the user wants to find, start, or propose work on a backlog item tracked in Jira, by name or informal description — phrases like "let's start on sessions," "is there a backlog item for the exercise library thing," or "let's do the meal tracking one." Searches the project's Jira backlog via whatever Jira/Atlassian MCP tool is available and hands off to /opsx:propose. Trigger on casual, conversational references to backlog work, not just explicit mentions of "backlog" or "Jira."
+allowed-tools: [mcp__*]
 license: MIT
 metadata:
   author: Ananda Narayanan Udayakumar
-  version: "1.0.0"
+  version: "2.2.0"
   generatedBy: "1.10.0"
 ---
 
-Peer dependency: this skill hands off to `/opsx:propose`, which is not
-bundled here. The consuming project must have OpenSpec's `opsx` commands
-installed (see this plugin's README).
+Peer dependency: this skill hands off to `/opsx:propose`, which is not bundled here. The consuming project must have OpenSpec's `opsx` commands installed (see this plugin's README).
 
-1. Read `BACKLOG.md` at the project root. If it doesn't exist, don't guess
-   at backlog items from memory or other files — instead offer to
-   scaffold one from this template, and stop until the user confirms:
+Jira is the single source of truth for the backlog here — this skill does not read or write a local `BACKLOG.md`, and it does not fall back to one. If no Jira tool is reachable, say so and stop rather than guessing from memory or another file; a silent fallback could match against stale data without the user realizing it. This skill mostly reads Jira — searching and inspecting issues — but it can also create a brand-new issue when nothing matches and the user explicitly asks for that (see step 4). It never edits, transitions, or comments on an *existing* issue; that's out of scope here.
 
-   ```markdown
-   # <Project Name> — Backlog & Working Notes
-
-   ## Backlog
-
-   **Priority:** MVP (needed for a first usable version) · V1 (right after) ·
-   V2 (nice-to-have) · Stretch (maybe never)
-   **Status:** Not proposed · Proposed · In progress · Archived
-
-   ### 1. <Category Name>
-
-   | Change | What it does | Priority | Depends on | Status | Notes |
-   |---|---|---|---|---|---|
-   | `<change-slug>` | <one-line description of what this change does> | MVP | — | Not proposed | |
-
-   ### 2. <Category Name>
-
-   | Change | What it does | Priority | Depends on | Status | Notes |
-   |---|---|---|---|---|---|
-   | `<change-slug>` | <one-line description of what this change does> | MVP | `<change-slug>` | Not proposed | |
-
-   ---
-
-   If the user confirms, write it to BACKLOG.md and ask them to fill in
-   real rows before matching against it — don't invent rows yourself.
-2. Match the user's phrase against a row's `Change` name or `What it does`
-   description — informal/partial matches count (e.g. "meal tracking"
-   matches a `meal-planner` row).
-3. If no row matches, say so and ask the user to describe the work instead
-   of guessing.
-4. If more than one row plausibly matches, don't guess — list the
-   candidates (name + what it does) and ask the user which one they mean.
-5. If a match is found, check its `Depends on` column against the other
-   rows' `Status`. If any dependency is not yet `Proposed`/`Archived`,
-   surface that gap to the user before proceeding — don't silently skip it.
-6.  Once the user confirms, hand off by running `/opsx:propose` yourself as
-   the next turn — output the command with the matched item's name and
-   description, e.g. `/opsx:propose "<name>: <what it does>"`. This is a
-   conversational handoff, not a guaranteed programmatic one: skills have
-   no mechanism to invoke another slash command directly, so if it doesn't
-   fire, tell the user to run it themselves.
+1. Find a usable Jira tool. Look through your available tools (including deferred/MCP tools reachable via tool search) for one that can run a JQL search or otherwise look up Jira issues — for example a tool whose name mentions "jira" and "search"/"jql", or a generic Atlassian `discover`/`executeRead`-style tool. Different users have different Jira/Atlassian MCP servers installed, so never hardcode a specific tool name in your reasoning beyond what's actually present — discover it fresh each time. If no Jira-capable tool is available, say so plainly and stop.
+2. Determine scope. If the user hasn't already told you (earlier in this conversation) which Jira project key, board, or saved filter counts as "the backlog," ask before searching — don't guess a project key. Once they've told you, reuse it for the rest of the conversation without asking again.
+3. Search for a match. Run a JQL query scoped to the confirmed project/filter, matching the user's phrase against issue summary and description, e.g. `project = "<KEY>" AND (summary ~ "<keyword>" OR description ~ "<keyword>")`. Treat informal/partial phrasing as a match the way you would for exact keywords (e.g. "meal tracking" should match an issue titled "Meal planner and grocery list generation").
+4. If nothing matches — or the user says none of the candidates from step 5 are it — don't just say so and stop. Ask whether they'd like you to create a new Jira issue for this work. If they decline, ask them to describe the work differently instead of guessing, and stop there. If they say yes:
+   1. Look for a way to list this project's valid issue types (e.g. a project-issue-types operation on whatever Jira tool you found in step 1) and ask the user which type fits (Task, Story, Bug, etc.) — don't default this silently, since the right choice depends on the project's own scheme. Draft a summary from their phrase/description, refined into a proper issue title, and ask for a short description if they haven't already given enough detail to write one. Priority is optional — only set it if the user states one.
+   2. Ask whether this new item depends on / is blocked by anything already in the backlog. If they name something, resolve it to an issue key the same way you would in step 3 (search if they gave a description rather than a key; if more than one issue plausibly matches, list candidates and ask which one, same as step 5). If they don't know of anything, skip this — don't go looking for a plausible blocker on your own.
+   3. Show the user the exact fields you're about to create (project, issue type, summary, description, priority if any, and the blocking issue if one was named) and get their explicit confirmation before writing anything — this creates a real issue in a shared system, not a local file, so don't skip this even if step 4.1/4.2 felt conclusive.
+   4. Once confirmed, create the issue in the confirmed project using the Jira tool's create-issue operation. If a blocker was named, link it (the blocker "blocks" the new issue) using the Jira tool's issue-link operation, and report both the new issue's key and the link. If no blocker was named, the new issue can't yet be blocked by anything — skip the dependency check in step 6 and go straight to step 7. If a blocker was linked, run step 6 against it before proceeding to step 7, exactly as you would for an existing match — a newly created issue with an unresolved blocker still deserves that gap surfaced.
+5. If more than one issue plausibly matches, don't guess — list the candidates (issue key + summary) and ask the user which one they mean, or whether none of them are it (route that to step 4's create flow).
+6. If a single existing match is found (steps 3 or 5 — not a freshly created issue from step 4), fetch its full detail and check its issue links for "blocks" / "is blocked by" relationships. If any blocking issue is not Done/Resolved, surface that gap to the user before proceeding — don't silently skip it.
+7. Once the user confirms, hand off by running `/opsx:propose` yourself as the next turn — output the command with the issue's key and summary, e.g. `/opsx:propose "<ISSUE-KEY>: <summary>"`. This is a conversational handoff, not a guaranteed programmatic one: skills have no mechanism to invoke another slash command directly, so if it doesn't fire, tell the user to run it themselves.
