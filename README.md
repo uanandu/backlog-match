@@ -93,6 +93,23 @@ to look and no fallback, so it says as much and stops. Without prerequisite
 1, it can still find (or create) the matching issue, but the final
 `/opsx:propose` handoff has nothing to run against.
 
+## 🔄 v1 vs v2
+
+v1 matched against a local `BACKLOG.md` table. v2 replaces that with live
+Jira issues and adds the ability to create one on the spot:
+
+| | v1 | v2 |
+|---|---|---|
+| Data source | Local `BACKLOG.md` file | Live Jira, via any Jira/Atlassian MCP tool available |
+| Matching against | `Change` name / `What it does` column | Issue summary / description |
+| Dependency check | `Depends on` column vs. other rows' `Status` | Issue links (`blocks` / `is blocked by`) vs. the blocker's status |
+| No match found | Ask the user to describe the work | Offer to create the issue — asking issue type, summary, description, and an optional blocker — after confirming the fields |
+| Prerequisite missing | Offer to scaffold `BACKLOG.md` from a template | Say so and stop; there's no fallback |
+| Handoff format | `/opsx:propose "<change-slug>: <what it does>"` | `/opsx:propose "<ISSUE-KEY>: <summary>"` |
+
+v1 is still available in this repo's git history if you need to reference
+it; the plugin itself only ships v2 going forward.
+
 ## Install
 
 Via marketplace (recommended):
