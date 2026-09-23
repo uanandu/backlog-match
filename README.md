@@ -110,6 +110,20 @@ Jira issues and adds the ability to create one on the spot:
 v1 is still available in this repo's git history if you need to reference
 it; the plugin itself only ships v2 going forward.
 
+## 🗺️ Roadmap: v3 (planned) — syncing back to Jira
+
+v1 and v2 only flow one way: Jira → OpenSpec. v3 will close the loop —
+as an OpenSpec change moves through its lifecycle, push that state back
+to the Jira issue it came from, via a companion skill (`backlog-sync`).
+Not built yet; this is the intended design:
+
+| | Detail |
+|---|---|
+| Trigger | Conversational, like `backlog-match` itself — you say something like "this shipped, sync it back to Jira" once a change is archived. It is **not** triggered by `/opsx:archive` completing: skills don't get invoked by another command finishing, and there's no Claude Code hook for "a slash command completed" to hang this on either. |
+| Action | Transition the source Jira issue's status (e.g. → Done) and post a comment linking the PR/commit. |
+| Scope | Only the issue `backlog-match` originally matched or created for that change — it won't go looking for other issues to update. |
+| Trade-off | Not automatic — it depends on someone actually invoking it after archiving. The alternative (wiring a sync step into `/opsx:archive`'s own prompt) would need edits to that peer dependency's command file, which this plugin doesn't own or bundle. |
+
 ## Install
 
 Via marketplace (recommended):
