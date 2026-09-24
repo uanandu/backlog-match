@@ -120,16 +120,30 @@ Or manually: copy this repo into the consuming project's
 
 ## 💡 Example
 
+No slash command invokes this — it's triggered conversationally. Just say
+what you mean to Claude Code and it recognizes the intent from context.
+
 Given this issue in Jira:
 
 | Key      | Summary                                           | Status  | Links |
 | -------- | -------------------------------------------------- | ------- | ----- |
 | PROJ-142 | Weekly meal planning and grocery list generation  | Backlog | —     |
 
-Saying **"let's do the meal tracking one"** is enough. The skill matches it
-against the issue's summary and description, checks for unresolved
-blockers, and — once you confirm — hands off to:
+**You:** "let's do the meal tracking one"
+
+**Claude:**
+1. Searches the Jira backlog and matches the phrase to `PROJ-142`.
+2. Checks `PROJ-142`'s issue links for unresolved blockers — none found.
+3. Confirms: "Found PROJ-142: Weekly meal planning and grocery list
+   generation. No open blockers. Start the proposal?"
+
+**You:** "yep"
+
+**Claude** hands off by running, as its next turn:
 
 ```
 /opsx:propose "PROJ-142: Weekly meal planning and grocery list generation"
 ```
+
+If `PROJ-142` had an unresolved blocker, step 3 would surface it instead
+of confirming, and wait for you to say go ahead anyway.
