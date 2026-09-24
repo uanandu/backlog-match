@@ -1,42 +1,24 @@
 # 🔖 backlog-match
 
-> "let's do the meal tracking one" → matched, checked, and handed to OpenSpec.
-
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-5A4FCF.svg)
 
-A Claude Code skill that turns a casual, half-remembered mention of backlog
-work into a formal OpenSpec proposal — no need to recall the exact Jira
-issue key.
+A Claude Code skill that matches a plain-language description of backlog
+work to a Jira issue, checks that its blockers are resolved, and hands off
+to OpenSpec's proposal flow — no need to recall the exact issue key.
 
-## 🤔 Why
-
-Backlogs pile up fast, and remembering the exact issue key (`PROJ-142`,
-not "the meal tracking one") shouldn't be the thing standing between an
-idea and a formal proposal. Describe the work the way you'd actually say
-it out loud, and this skill finds it in your Jira backlog, checks for
-unresolved dependencies, and kicks off the OpenSpec flow.
-
-## 💡 Example
-
-Given this issue in Jira:
-
-| Key      | Summary                                           | Status  | Links |
-| -------- | -------------------------------------------------- | ------- | ----- |
-| PROJ-142 | Weekly meal planning and grocery list generation  | Backlog | —     |
-
-Saying **"let's do the meal tracking one"** is enough. The skill matches it
-against the issue's summary and description, checks for unresolved
-blockers, and — once you confirm — hands off to:
-
-```
-/opsx:propose "PROJ-142: Weekly meal planning and grocery list generation"
-```
-
-And if nothing matches, it doesn't just give up — it offers to create the
+If nothing matches, it doesn't just give up — it offers to create the
 issue instead, asks for what it needs (issue type, summary, description,
 whether it's blocked by anything else in the backlog), and shows you the
 exact fields before writing anything to Jira.
+
+## 🤔 Why
+
+Backlogs pile up fast, and remembering the exact issue key shouldn't be
+the thing standing between an idea and a formal proposal. Describe the
+work the way you'd actually say it out loud, and this skill finds it in
+your Jira backlog, checks for unresolved dependencies, and kicks off the
+OpenSpec flow.
 
 ## 🧭 How it works
 
@@ -135,3 +117,19 @@ Via marketplace (recommended):
 
 Or manually: copy this repo into the consuming project's
 `.claude/plugins/backlog-match/` directory.
+
+## 💡 Example
+
+Given this issue in Jira:
+
+| Key      | Summary                                           | Status  | Links |
+| -------- | -------------------------------------------------- | ------- | ----- |
+| PROJ-142 | Weekly meal planning and grocery list generation  | Backlog | —     |
+
+Saying **"let's do the meal tracking one"** is enough. The skill matches it
+against the issue's summary and description, checks for unresolved
+blockers, and — once you confirm — hands off to:
+
+```
+/opsx:propose "PROJ-142: Weekly meal planning and grocery list generation"
+```
