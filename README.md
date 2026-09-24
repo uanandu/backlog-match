@@ -1,42 +1,24 @@
 # 🔖 backlog-match
 
-> "let's do the meal tracking one" → matched, checked, and handed to OpenSpec.
-
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-plugin-5A4FCF.svg)
 
-A Claude Code skill that turns a casual, half-remembered mention of backlog
-work into a formal OpenSpec proposal — no need to recall the exact Jira
-issue key.
+A Claude Code skill that matches a plain-language description of backlog
+work to a Jira issue, checks that its blockers are resolved, and hands off
+to OpenSpec's proposal flow — no need to recall the exact issue key.
 
-## 🤔 Why
-
-Backlogs pile up fast, and remembering the exact issue key (`PROJ-142`,
-not "the meal tracking one") shouldn't be the thing standing between an
-idea and a formal proposal. Describe the work the way you'd actually say
-it out loud, and this skill finds it in your Jira backlog, checks for
-unresolved dependencies, and kicks off the OpenSpec flow.
-
-## 💡 Example
-
-Given this issue in Jira:
-
-| Key      | Summary                                           | Status  | Links |
-| -------- | -------------------------------------------------- | ------- | ----- |
-| PROJ-142 | Weekly meal planning and grocery list generation  | Backlog | —     |
-
-Saying **"let's do the meal tracking one"** is enough. The skill matches it
-against the issue's summary and description, checks for unresolved
-blockers, and — once you confirm — hands off to:
-
-```
-/opsx:propose "PROJ-142: Weekly meal planning and grocery list generation"
-```
-
-And if nothing matches, it doesn't just give up — it offers to create the
+If nothing matches, it doesn't just give up — it offers to create the
 issue instead, asks for what it needs (issue type, summary, description,
 whether it's blocked by anything else in the backlog), and shows you the
 exact fields before writing anything to Jira.
+
+## 🤔 Why
+
+Backlogs pile up fast, and remembering the exact issue key shouldn't be
+the thing standing between an idea and a formal proposal. Describe the
+work the way you'd actually say it out loud, and this skill finds it in
+your Jira backlog, checks for unresolved dependencies, and kicks off the
+OpenSpec flow.
 
 ## 🧭 How it works
 
@@ -110,6 +92,20 @@ Jira issues and adds the ability to create one on the spot:
 v1 is still available in this repo's git history if you need to reference
 it; the plugin itself only ships v2 going forward.
 
+## 🗺️ Roadmap: v3 (planned) — syncing back to Jira
+
+v1 and v2 only flow one way: Jira → OpenSpec. v3 will close the loop —
+as an OpenSpec change moves through its lifecycle, push that state back
+to the Jira issue it came from, via a companion skill (`backlog-sync`).
+Not built yet; this is the intended design:
+
+| | Detail |
+|---|---|
+| Trigger | Conversational, like `backlog-match` itself — you say something like "this shipped, sync it back to Jira" once a change is archived. It is **not** triggered by `/opsx:archive` completing: skills don't get invoked by another command finishing, and there's no Claude Code hook for "a slash command completed" to hang this on either. |
+| Action | Transition the source Jira issue's status (e.g. → Done) and post a comment linking the PR/commit. |
+| Scope | Only the issue `backlog-match` originally matched or created for that change — it won't go looking for other issues to update. |
+| Trade-off | Not automatic — it depends on someone actually invoking it after archiving. The alternative (wiring a sync step into `/opsx:archive`'s own prompt) would need edits to that peer dependency's command file, which this plugin doesn't own or bundle. |
+
 ## Install
 
 Via marketplace (recommended):
@@ -121,3 +117,19 @@ Via marketplace (recommended):
 
 Or manually: copy this repo into the consuming project's
 `.claude/plugins/backlog-match/` directory.
+
+## 💡 Example
+
+Given this issue in Jira:
+
+| Key      | Summary                                           | Status  | Links |
+| -------- | -------------------------------------------------- | ------- | ----- |
+| PROJ-142 | Weekly meal planning and grocery list generation  | Backlog | —     |
+
+Saying **"let's do the meal tracking one"** is enough. The skill matches it
+against the issue's summary and description, checks for unresolved
+blockers, and — once you confirm — hands off to:
+
+```
+/opsx:propose "PROJ-142: Weekly meal planning and grocery list generation"
+```
