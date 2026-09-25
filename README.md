@@ -6,7 +6,8 @@
 A Claude Code plugin that connects your Jira backlog to
 [OpenSpec](https://github.com/Fission-AI/OpenSpec). Describe work the way you'd
 say it out loud, and Claude finds the Jira issue, checks its blockers, and
-starts the proposal. When the work ships, it updates the issue for you.
+starts the proposal. When the work ships, it sends the issue for review and
+leaves a trail in Jira.
 
 No need to remember an issue key. No copy-pasting between tools.
 
@@ -15,7 +16,7 @@ No need to remember an issue key. No copy-pasting between tools.
 | Skill | Direction | What it does |
 |---|---|---|
 | `backlog-match` | Jira → OpenSpec | Finds the issue for a piece of work (or creates it), checks that its blockers are resolved, and hands off to `/opsx:propose`. |
-| `backlog-sync` | OpenSpec → Jira | Once a change ships, moves the issue to Done and comments with the PR/commit link. |
+| `backlog-sync` | OpenSpec → Jira | Once a change ships, creates a review sub-task, moves the issue to Ready for Review and comments with the PR/commit link. Can mark it Done directly if you ask. |
 
 Both are triggered by plain conversation, not slash commands.
 
@@ -34,21 +35,24 @@ flowchart LR
     E -- you say go ahead --> F
     F -.-> K[Implement and /opsx:archive]
     K -.-> L["'This shipped, sync it back'"]
-    L --> M[Confirm status change + comment]
-    M --> N[Issue → Done]
+    L --> M[Confirm sub-task, status change, comment]
+    M --> N[Review sub-task created, issue → Ready for Review]
+    N -.-> O[Reviewer closes sub-task, issue → Done]
 ```
 
-Solid arrows are `backlog-match`. The dotted path is your normal OpenSpec
-work, ending with `backlog-sync`.
+Solid arrows are the skills. Dotted arrows are your own work: the OpenSpec
+steps in the middle, and the review at the end.
 
 ## ✨ Features
 
 **`backlog-match`**
 - Matches informal phrasing to issue summaries and descriptions — "meal
   tracking" finds "Weekly meal planning and grocery list generation".
+  Sub-tasks are skipped, so you land on the story, not on its review task.
 - Asks which candidate you mean when more than one matches.
 - Checks `blocks` / `is blocked by` links and tells you about unresolved
-  blockers before you start.
+  blockers before you start. A blocker only counts as resolved once it's in
+  a Done status, so one still waiting for review stays a blocker.
 - If nothing matches, offers to create the issue: you choose the type,
   review the summary and description, and optionally name a blocker. Nothing
   is written until you confirm the exact fields.
@@ -57,12 +61,17 @@ work, ending with `backlog-sync`.
 **`backlog-sync`**
 - Finds the Jira issue a change came from and checks it matches before
   writing anything.
-- Picks the workflow transition that leads to a Done status, or asks you when
+- **Review mode (default):** creates a `Review: …` sub-task (with what
+  shipped, the PR link, the specs touched and task progress), moves the
+  issue to a *Ready for Review* status, and comments on it. It never marks
+  the issue Done, because it can't know whether the review passed.
+- **Done mode:** say "mark it done" and it moves the issue straight to Done
+  instead, with no sub-task.
+- Picks the workflow transition by the status it leads to, and asks you when
   it's ambiguous. Workflows differ per project, so it doesn't assume.
-- Posts a comment with the change name, what shipped, and a link to the
-  merged PR or commit.
-- Shows the exact status change and comment and waits for your yes.
-- Updates only that one issue.
+- Won't create a second review sub-task if an open one already exists.
+- Shows the exact sub-task, status change and comment and waits for your yes.
+- Updates only that one issue, plus the one review sub-task under it.
 
 ## Prerequisites
 
@@ -88,7 +97,8 @@ server.
 
 - `backlog-match` needs search and fetch, plus create-issue and issue-link
   if you want it to create issues.
-- `backlog-sync` needs fetch, list transitions, transition, and add comment.
+- `backlog-sync` needs fetch, search, list transitions, transition, add
+  comment, and create issue (for the review sub-task).
 
 If no Jira tool is available, the skills say so and stop. There is no
 fallback to a local file.
@@ -96,11 +106,28 @@ fallback to a local file.
 </details>
 
 <details>
-<summary><strong>3. (Optional) <code>git</code> and <code>gh</code></strong></summary>
+<summary><strong>3. A review-ready status in your Jira workflow (for review mode)</strong></summary>
 <br>
 
-`backlog-sync` uses them, read-only, to find the merged PR or commit to
-link in its Jira comment. Without them it asks you for a link.
+Review mode looks for a status like **Ready for Review** or **Awaiting
+Review**. A workflow such as To Do → In Progress → Ready for Review → In
+Review → Done works well. Keep the review statuses in Jira's *In Progress*
+category, not *Done*, so the blocker check treats work waiting for review as
+unfinished. If your workflow has no such status, `backlog-sync` says so and
+offers Done mode or a sub-task without a status change.
+
+To have the parent close itself once the review sub-task is Done, add a Jira
+automation rule: "when all sub-tasks are Done, move the parent to Done".
+
+</details>
+
+<details>
+<summary><strong>4. (Optional) A git repository with a remote</strong></summary>
+<br>
+
+`backlog-sync` reads your git history, read-only, to find the merged PR or
+commit to link in its Jira comment (no GitHub CLI needed). If it can't find
+one, it asks you for a link.
 
 </details>
 
@@ -152,15 +179,19 @@ After implementing and running `/opsx:archive`:
 PR, and shows you what it's about to do:
 
 > **PROJ-142** — Weekly meal planning and grocery list generation
-> Status: Backlog → Done
+> New sub-task: "Review: Weekly meal planning and grocery list generation"
+> (PR link, specs touched: `meal-planning`, 5/5 tasks done)
+> Status: In Progress → Ready for Review
 > Comment: "OpenSpec change `add-meal-planner` archived 2026-09-25. Adds
-> weekly meal planning and grocery list generation.
-> PR: https://github.com/…/pull/17"
+> weekly meal planning and grocery list generation. Review sub-task:
+> PROJ-143. PR: https://github.com/…/pull/17"
 
 **You:** "yes"
 
-**Claude** moves the issue to Done, posts the comment, and reports the new
-status.
+**Claude** creates the review sub-task, moves the issue to Ready for Review,
+posts the comment, and reports what it did. When the reviewer closes the
+sub-task, the issue can move to Done. Say "mark it done" instead and it skips
+the sub-task and moves the issue straight to Done.
 
 ## Good to know
 
