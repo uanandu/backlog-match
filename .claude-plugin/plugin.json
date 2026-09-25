@@ -1,6 +1,6 @@
 {
   "name": "backlog-match",
-  "description": "Match casual references to a project's Jira backlog issues, offer to create one (with dependency links) when nothing matches, and hand off to OpenSpec's /opsx:propose command. Companion backlog-sync skill moves the issue to review with a review sub-task and a PR/commit comment once the change ships, or marks it Done on request.",
+  "description": "Match casual references to a project's Jira backlog issues, offer to create one (with dependency links) when nothing matches, move the chosen issue to In Progress, and hand off to OpenSpec's /opsx:propose command. Companion backlog-sync skill moves the issue to review with a review sub-task and a PR/commit comment once the change ships, or marks it Done on request.",
   "version": "3.0.0",
   "author": { "name": "Ananda Narayanan Udayakumar" },
   "license": "MIT"

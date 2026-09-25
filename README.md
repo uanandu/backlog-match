@@ -31,8 +31,9 @@ flowchart LR
     H --> D
     B -- yes --> D{Blockers resolved?}
     D -- no --> E[Surface the gap]
-    D -- yes --> F["/opsx:propose"]
-    E -- you say go ahead --> F
+    D -- yes --> P[Confirm, move issue to In Progress]
+    E -- you say go ahead --> P
+    P --> F["/opsx:propose"]
     F -.-> K[Implement and /opsx:archive]
     K -.-> L["'This shipped, sync it back'"]
     L --> M[Confirm sub-task, status change, comment]
@@ -56,7 +57,11 @@ steps in the middle, and the review at the end.
 - If nothing matches, offers to create the issue: you choose the type,
   review the summary and description, and optionally name a blocker. Nothing
   is written until you confirm the exact fields.
-- Never edits, transitions, or comments on an issue that already exists.
+- When you confirm the proposal, moves the issue to **In Progress** (skipped if
+  it's already In Progress or further along, or if you say to leave the
+  ticket alone).
+- Beyond that one move, never edits, comments on, or transitions an existing
+  issue. Review, Done and comments are `backlog-sync`'s job.
 
 **`backlog-sync`**
 - Finds the Jira issue a change came from and checks it matches before
@@ -95,8 +100,9 @@ Any MCP server that can search and read Jira issues works. The skills find
 the right tools by capability at runtime, so they aren't tied to one
 server.
 
-- `backlog-match` needs search and fetch, plus create-issue and issue-link
-  if you want it to create issues.
+- `backlog-match` needs search and fetch, list transitions and transition
+  (to move the issue to In Progress), plus create-issue and issue-link if you
+  want it to create issues.
 - `backlog-sync` needs fetch, search, list transitions, transition, add
   comment, and create issue (for the review sub-task).
 
@@ -155,11 +161,12 @@ Given this issue in Jira:
 
 **Claude:** searches the backlog, matches `PROJ-142`, finds no open
 blockers, and asks: "Found PROJ-142: Weekly meal planning and grocery list
-generation. No open blockers. Start the proposal?"
+generation. No open blockers. Start the proposal and move it to In
+Progress?"
 
 **You:** "yep"
 
-**Claude** hands off by running:
+**Claude** moves `PROJ-142` to In Progress, then hands off by running:
 
 ```
 /opsx:propose "PROJ-142: Weekly meal planning and grocery list generation (Jira: PROJ-142 — keep the key in the change name and reference it in proposal.md)"

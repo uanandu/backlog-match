@@ -9,7 +9,7 @@ metadata:
   version: "1.1.0"
 ---
 
-Companion to `backlog-match`. That skill goes Jira → OpenSpec and only ever reads Jira (plus creating a new issue). This one closes the loop the other way: once an OpenSpec change is done, it pushes that state back to the Jira issue the change came from.
+Companion to `backlog-match`. That skill goes Jira → OpenSpec and only reads Jira, apart from creating a new issue when nothing matches and moving the chosen issue to In Progress at handoff. This one closes the loop the other way: once an OpenSpec change is done, it pushes that state back to the Jira issue the change came from.
 
 There are two modes:
 
