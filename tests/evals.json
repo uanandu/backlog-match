@@ -1,0 +1,207 @@
+{
+  "description": "Behavior cases for the backlog-match and backlog-sync skills. These describe what a correct run looks like; they are meant for a human or an eval harness to run against a Jira site with a matching backlog, then judge. tests/validate.py only checks their shape. Issue keys and titles are examples.",
+  "fixture": {
+    "issues": [
+      "PROJ-1  Story  To Do  Weekly meal planning and grocery list generation",
+      "PROJ-2  Story  To Do  Exercise library with video demos (blocked by PROJ-3)",
+      "PROJ-3  Story  To Do  Set up user accounts (blocks PROJ-2)",
+      "PROJ-4  Story  To Do  Workout session logging",
+      "PROJ-5  Story  To Do  Workout session history charts",
+      "PROJ-6  Story  Done   Legacy import script",
+      "PROJ-7  Epic   To Do  Core engine (children: PROJ-4, PROJ-5)",
+      "PROJ-8  Subtask       Review: meal planning (under PROJ-1)"
+    ],
+    "workflow": "To Do -> In Progress -> Ready for Review -> In Review -> Done"
+  },
+  "cases": [
+    {
+      "id": "match-trigger-casual",
+      "skill": "backlog-match",
+      "prompt": "let's do the meal tracking one",
+      "should_trigger": true,
+      "expect": [
+        "loads backlog-match",
+        "searches by separate keywords ORed together, not the whole phrase as one string",
+        "matches PROJ-1 by meaning even though 'tracking' is not in its title",
+        "does not match the sub-task PROJ-8"
+      ]
+    },
+    {
+      "id": "match-handoff",
+      "skill": "backlog-match",
+      "prompt": "yep (after being asked: Start the proposal and move PROJ-1 to In Progress?)",
+      "should_trigger": true,
+      "expect": [
+        "PROJ-1 is transitioned to In Progress before the command appears",
+        "the next turn is /opsx:propose with the key, a sanitized summary and the note to keep the key in the change name and proposal.md"
+      ]
+    },
+    {
+      "id": "match-ambiguous",
+      "skill": "backlog-match",
+      "prompt": "let's start on the workout session one",
+      "should_trigger": true,
+      "expect": [
+        "lists PROJ-4 and PROJ-5 and asks which",
+        "offers 'none of these' which routes to the create flow"
+      ]
+    },
+    {
+      "id": "match-blocked",
+      "skill": "backlog-match",
+      "prompt": "let's do the exercise library",
+      "should_trigger": true,
+      "expect": [
+        "reports PROJ-3 as an unresolved blocker before asking to proceed",
+        "moves nothing to In Progress until the user says to go ahead"
+      ]
+    },
+    {
+      "id": "match-done-only",
+      "skill": "backlog-match",
+      "prompt": "let's do the legacy import script",
+      "should_trigger": true,
+      "expect": [
+        "says PROJ-6 already looks Done and does not offer to start it"
+      ]
+    },
+    {
+      "id": "match-epic",
+      "skill": "backlog-match",
+      "prompt": "let's do the core engine",
+      "should_trigger": true,
+      "expect": [
+        "does not hand off /opsx:propose for the epic",
+        "lists the epic's open child stories in rank order and asks which"
+      ]
+    },
+    {
+      "id": "match-no-jira",
+      "skill": "backlog-match",
+      "prompt": "let's do the meal tracking one (with no Jira tool connected)",
+      "should_trigger": true,
+      "expect": [
+        "says no Jira tool is available and stops",
+        "does not fall back to a local file or guess from memory"
+      ]
+    },
+    {
+      "id": "match-create-confirms",
+      "skill": "backlog-match",
+      "prompt": "let's do the sleep tracking thing (nothing matches; user says yes to creating it)",
+      "should_trigger": true,
+      "expect": [
+        "asks which issue type instead of defaulting",
+        "asks whether it is blocked by anything and does not invent a blocker",
+        "shows the exact fields and creates nothing until the user confirms"
+      ]
+    },
+    {
+      "id": "sync-review-mode",
+      "skill": "backlog-sync",
+      "prompt": "the meal planner change shipped, sync it back to Jira",
+      "should_trigger": true,
+      "expect": [
+        "recovers PROJ-1 from the change folder and says where it found it",
+        "shows the review sub-task, the move to Ready for Review, and the comment text before writing anything",
+        "after confirmation: creates the sub-task, then transitions, then comments",
+        "never sets the story to Done in review mode"
+      ]
+    },
+    {
+      "id": "sync-done-mode",
+      "skill": "backlog-sync",
+      "prompt": "mark PROJ-1 done",
+      "should_trigger": true,
+      "expect": [
+        "uses Done mode: no sub-task is created",
+        "picks a transition whose target status is in the Done category"
+      ]
+    },
+    {
+      "id": "sync-duplicate-guard",
+      "skill": "backlog-sync",
+      "prompt": "sync it back to PROJ-1 (an open 'Review:' sub-task already exists)",
+      "should_trigger": true,
+      "expect": [
+        "does not create a second review sub-task"
+      ]
+    },
+    {
+      "id": "sync-refuses-epic-and-subtask",
+      "skill": "backlog-sync",
+      "prompt": "sync it back to PROJ-7, then to PROJ-8",
+      "should_trigger": true,
+      "expect": [
+        "refuses the epic and the sub-task and asks for the story key"
+      ]
+    },
+    {
+      "id": "sync-false-positive-key",
+      "skill": "backlog-sync",
+      "prompt": "sync the change (its proposal.md mentions SHA-256 and UTF-8; the real key is only in the folder name)",
+      "should_trigger": true,
+      "expect": [
+        "ignores SHA-256 and UTF-8 because they do not resolve to Jira issues",
+        "uses the real key without asking which one"
+      ]
+    },
+    {
+      "id": "sync-unpushed-commit",
+      "skill": "backlog-sync",
+      "prompt": "sync the change (its only commit exists locally and is not on any remote branch)",
+      "should_trigger": true,
+      "expect": [
+        "notices the commit is not on a remote, says so, and asks for a link",
+        "does not build a commit URL that would be dead"
+      ]
+    },
+    {
+      "id": "sync-no-key-asks",
+      "skill": "backlog-sync",
+      "prompt": "sync the sleep change back to Jira (no key anywhere on disk or in the conversation)",
+      "should_trigger": true,
+      "expect": [
+        "asks the user for the key",
+        "does not search Jira for a probable match"
+      ]
+    },
+    {
+      "id": "decline-writes-nothing",
+      "skill": "backlog-sync",
+      "prompt": "no (at the confirmation step)",
+      "should_trigger": true,
+      "expect": [
+        "no sub-task, status change or comment is written"
+      ]
+    },
+    {
+      "id": "no-trigger-weather",
+      "skill": null,
+      "prompt": "what's the weather like",
+      "should_trigger": false,
+      "expect": ["neither skill loads"]
+    },
+    {
+      "id": "no-trigger-code-fix",
+      "skill": null,
+      "prompt": "fix the bug in my parser",
+      "should_trigger": false,
+      "expect": ["neither skill loads"]
+    },
+    {
+      "id": "no-trigger-git-push",
+      "skill": null,
+      "prompt": "git push my branch",
+      "should_trigger": false,
+      "expect": ["neither skill loads"]
+    },
+    {
+      "id": "no-trigger-jira-template",
+      "skill": null,
+      "prompt": "write a jira ticket template for me",
+      "should_trigger": false,
+      "expect": ["neither skill loads"]
+    }
+  ]
+}

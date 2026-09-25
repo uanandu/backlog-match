@@ -48,8 +48,14 @@ steps in the middle, and the review at the end.
 
 **`backlog-match`**
 - Matches informal phrasing to issue summaries and descriptions — "meal
-  tracking" finds "Weekly meal planning and grocery list generation".
-  Sub-tasks are skipped, so you land on the story, not on its review task.
+  tracking" finds "Weekly meal planning and grocery list generation". It
+  searches on the distinctive keywords, then ranks what comes back by
+  meaning, because Jira's own text search is literal.
+- Skips finished work and sub-tasks, so you land on an open story, not on a
+  Done issue or a review task. If the only match is already Done, it tells
+  you.
+- If you name an epic, it doesn't start a proposal for it. It lists the
+  epic's open stories in backlog order and asks which one.
 - Asks which candidate you mean when more than one matches.
 - Checks `blocks` / `is blocked by` links and tells you about unresolved
   blockers before you start. A blocker only counts as resolved once it's in
@@ -65,7 +71,11 @@ steps in the middle, and the review at the end.
 
 **`backlog-sync`**
 - Finds the Jira issue a change came from and checks it matches before
-  writing anything.
+  writing anything. Text that merely looks like an issue key (`SHA-256`,
+  `UTF-8`) is ignored unless it resolves to a real issue.
+- Refuses an epic or a sub-task key and asks for the story instead.
+- Only links a PR or commit that's actually on the remote, so a comment never
+  contains a dead link.
 - **Review mode (default):** creates a `Review: …` sub-task (with what
   shipped, the PR link, the specs touched and task progress), moves the
   issue to a *Ready for Review* status, and comments on it. It never marks
@@ -108,6 +118,14 @@ server.
 
 If no Jira tool is available, the skills say so and stop. There is no
 fallback to a local file.
+
+**Permissions.** The skills pre-approve only *read* operations (get, search,
+discover, read) on the claude.ai Atlassian connector, and only for the turn
+the skill runs. Anything that writes to Jira (create, transition, comment)
+makes Claude Code ask for permission as well as the skill's own
+confirmation. On a different Jira MCP server the skills still work but ask
+on every call; add your own allow rule for that server's read tools (for
+example `mcp__<your-server>__get*`) if you want fewer prompts.
 
 </details>
 
@@ -155,7 +173,7 @@ Given this issue in Jira:
 
 | Key      | Summary                                          | Status  | Links |
 | -------- | ------------------------------------------------ | ------- | ----- |
-| PROJ-142 | Weekly meal planning and grocery list generation | Backlog | —     |
+| PROJ-142 | Weekly meal planning and grocery list generation | To Do   | —     |
 
 **You:** "let's do the meal tracking one"
 
@@ -210,6 +228,21 @@ the sub-task and moves the issue straight to Done.
   next turn. If it doesn't fire, run it yourself.
 - **Proposing a change without `backlog-match`?** Put the Jira key in the
   change name or in `proposal.md`, or `backlog-sync` will ask you for it.
+
+## Development
+
+```
+python3 tests/validate.py
+```
+
+runs static checks: manifests agree, each skill's frontmatter and step
+references are valid, allow rules are ones Claude Code honors, no stale tool
+names, and no private files are tracked. CI runs it on every push.
+
+`tests/evals.json` lists behavior cases (what a correct run looks like for
+each skill, plus phrases that must *not* trigger them). They need a Jira site
+to run against, so they're for a human or an eval harness to run and judge,
+not something CI can do.
 
 ## License
 
