@@ -6,7 +6,7 @@ allowed-tools: [mcp__*]
 license: MIT
 metadata:
   author: Ananda Narayanan Udayakumar
-  version: "2.2.0"
+  version: "2.3.0"
   generatedBy: "1.10.0"
 ---
 
@@ -24,4 +24,4 @@ Jira is the single source of truth for the backlog here — this skill does not 
    4. Once confirmed, create the issue in the confirmed project using the Jira tool's create-issue operation. If a blocker was named, link it (the blocker "blocks" the new issue) using the Jira tool's issue-link operation, and report both the new issue's key and the link. If no blocker was named, the new issue can't yet be blocked by anything — skip the dependency check in step 6 and go straight to step 7. If a blocker was linked, run step 6 against it before proceeding to step 7, exactly as you would for an existing match — a newly created issue with an unresolved blocker still deserves that gap surfaced.
 5. If more than one issue plausibly matches, don't guess — list the candidates (issue key + summary) and ask the user which one they mean, or whether none of them are it (route that to step 4's create flow).
 6. If a single existing match is found (steps 3 or 5 — not a freshly created issue from step 4), fetch its full detail and check its issue links for "blocks" / "is blocked by" relationships. If any blocking issue is not Done/Resolved, surface that gap to the user before proceeding — don't silently skip it.
-7. Once the user confirms, hand off by running `/opsx:propose` yourself as the next turn — output the command with the issue's key and summary, e.g. `/opsx:propose "<ISSUE-KEY>: <summary>"`. This is a conversational handoff, not a guaranteed programmatic one: skills have no mechanism to invoke another slash command directly, so if it doesn't fire, tell the user to run it themselves.
+7. Once the user confirms, hand off by running `/opsx:propose` yourself as the next turn — output the command with the issue's key and summary, e.g. `/opsx:propose "<ISSUE-KEY>: <summary> (Jira: <ISSUE-KEY> — keep the key in the change name and reference it in proposal.md)"`. The trailing note matters: OpenSpec doesn't record the Jira key on its own, and the companion `backlog-sync` skill later recovers the issue from the change folder, which only works if the key was written there. This is a conversational handoff, not a guaranteed programmatic one: skills have no mechanism to invoke another slash command directly, so if it doesn't fire, tell the user to run it themselves.

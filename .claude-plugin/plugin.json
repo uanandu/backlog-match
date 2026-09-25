@@ -1,7 +1,7 @@
 {
   "name": "backlog-match",
-  "description": "Match casual references to a project's Jira backlog issues, offer to create one (with dependency links) when nothing matches, and hand off to OpenSpec's /opsx:propose command.",
-  "version": "2.2.0",
+  "description": "Match casual references to a project's Jira backlog issues, offer to create one (with dependency links) when nothing matches, and hand off to OpenSpec's /opsx:propose command. Companion backlog-sync skill transitions the Jira issue to Done and comments with the PR/commit link once the change ships.",
+  "version": "3.0.0",
   "author": { "name": "Ananda Narayanan Udayakumar" },
   "license": "MIT"
 }
